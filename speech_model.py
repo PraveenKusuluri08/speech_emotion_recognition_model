@@ -20,7 +20,7 @@ emotions = {
 AVAILABLE_EMOTIONS = ["angry", "fearful", "surprise", "neutral"]
 
 def load_audio_data_files() -> list[str]:
-    return glob.glob("./Audio_Speech_Actors/Actor_0*/*")
+    return glob.glob("./Audio_Speech_Actors/Actor_**/*")
 
 def extract_features(audio_path):
     try:
@@ -76,16 +76,24 @@ class SpeechRecognitionModel():
     def predict_emotion(self, audio_path):
         features = extract_features(audio_path)
         features = features.reshape(1, -1)
-        prediction = self.classifier.predict(features)
-        probabilities = self.classifier.predict_proba(features)
-        
+        prediction = self.classifier.predict(features)[0]
+        probabilities = self.classifier.predict_proba(features)[0]
+
         emotion_scores = {
-            emotion: float(prob) 
-            for emotion, prob in zip(self.emotions, probabilities[0])
+            emotion: float(prob)
+            for emotion, prob in zip(self.emotions, probabilities)
         }
-        
+
+        # Determine the predicted emotion based on the highest confidence score
+        predicted_emotion = max(emotion_scores, key=emotion_scores.get)
+
+        # Add a confidence score threshold (e.g., 0.7)
+        confidence_threshold = 0.7
+        if emotion_scores[predicted_emotion] < confidence_threshold:
+            predicted_emotion = "uncertain"
+
         return {
-            'predicted_emotion': prediction[0],
+            'predicted_emotion': predicted_emotion,
             'confidence_scores': emotion_scores
         }
     def save_model(self, model_path="saved_models"):
@@ -142,7 +150,7 @@ def main():
     print(f"Model accuracy: {accuracy:.2f}")
     
     # Test prediction on first file
-    test_file = "./Audio_Speech_Actors/Actor_01/03-01-01-01-01-02-01.wav"
+    test_file = "./Audio_Speech_Actors/Actor_01/03-01-01-01-01-01-01.wav"
     
     if os.path.exists(test_file):
         result = ser.predict_emotion(test_file)
