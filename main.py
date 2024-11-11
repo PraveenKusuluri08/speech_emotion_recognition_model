@@ -70,21 +70,29 @@ def predict_emotion():
     try:
         # Reshape features and make predictions
         features = features.reshape(1, -1)
-        prediction = model.predict(features)[0]
+        
+        if not hasattr(model, "n_layers_"):
+            return jsonify({'error': 'Model not fitted. Train the model before using.'}), 500
+        
+
         probabilities = model.predict_proba(features)[0]
+        print(probabilities)
 
         emotion_scores = {
             emotion: float(prob)
             for emotion, prob in zip(AVAILABLE_EMOTIONS, probabilities)
         }
+        prediction = model.predict(features)[0]
+        print(emotion_scores,prediction)
 
         return jsonify({
-            'predicted_emotion': prediction,
-            'confidence_scores': emotion_scores
+            'confidence_scores': emotion_scores,
+            'predicted_emotion': prediction
         })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
