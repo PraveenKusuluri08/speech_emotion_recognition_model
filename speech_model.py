@@ -76,24 +76,16 @@ class SpeechRecognitionModel():
     def predict_emotion(self, audio_path):
         features = extract_features(audio_path)
         features = features.reshape(1, -1)
-        prediction = self.classifier.predict(features)[0]
-        probabilities = self.classifier.predict_proba(features)[0]
-
+        prediction = self.classifier.predict(features)
+        probabilities = self.classifier.predict_proba(features)
+        
         emotion_scores = {
-            emotion: float(prob)
-            for emotion, prob in zip(self.emotions, probabilities)
+            emotion: float(prob) 
+            for emotion, prob in zip(self.emotions, probabilities[0])
         }
-
-        # Determine the predicted emotion based on the highest confidence score
-        predicted_emotion = max(emotion_scores, key=emotion_scores.get)
-
-        # Add a confidence score threshold (e.g., 0.7)
-        confidence_threshold = 0.7
-        if emotion_scores[predicted_emotion] < confidence_threshold:
-            predicted_emotion = "uncertain"
-
+        
         return {
-            'predicted_emotion': predicted_emotion,
+            'predicted_emotion': prediction[0],
             'confidence_scores': emotion_scores
         }
     def save_model(self, model_path="saved_models"):
